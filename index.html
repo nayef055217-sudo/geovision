@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="ar">
+<head>
+    <meta charset="UTF-8">
+    <title>منظومة Geo-Vision AR - رابط المحاكاة</title>
+    <!-- استدعاء مكتبات الواقع المعزز ثلاثية الأبعاد مجاناً -->
+    <script src="https://aframe.io"></script>
+    <script src="https://githack.com"></script>
+    <style>
+        body { margin: 0; overflow: hidden; font-family: Arial, sans-serif; }
+        #telemetry-ui {
+            position: absolute; top: 10px; left: 10px; background: rgba(0,0,0,0.7);
+            color: #00ffcc; padding: 15px; border-radius: 8px; font-size: 14px; z-index: 999;
+            border: 1px solid #00ffcc; pointer-events: none; text-align: right; direction: rtl;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- واجهة البيانات الرقمية الظاهرة فوق الكاميرا -->
+    <div id="telemetry-ui">
+        <h3>Geo-Vision AR Telemetry</h3>
+        <p>حالة الحساس اللاسلكي: <span id="status" style="color:#00ff00;">متصل (ESP32 الافتراضي)</span></p>
+        <div id="target-data">
+            <p style="color:#ffcc00; font-weight:bold;">[تم رصد هدف تحت الأرض]</p>
+            <p>نوع المادة: ذهب صلب / عرق ثمين</p>
+            <p>العمق الحقيقي: <span id="depth">120</span> سم</p>
+            <p>نسبة التأكيد الفيزيائي: 91%</p>
+        </div>
+    </div>
+
+    <!-- كاميرا الواقع المعزز ونظام المسح ثلاثي الأبعاد -->
+    <a-scene embedded arjs="sourceType: webcam; debugUIEnabled: false;">
+        
+        <!-- سيظهر مجسم الذهب مباشرة عند توجيه الكاميرا والتعرف على السطح -->
+        
+            <!-- مجسم أسطواني يمثل عرق الذهب ممتد لأسفل -->
+            <a-cylinder position="0 -1 0" radius="0.15" height="3" color="#ffcc00" material="opacity: 0.7; transparent: true; metalness: 0.9; roughness: 0.1;"></a-cylinder>
+            <!-- شذرة ذهب دائرية متوهجة تدور حول نفسها -->
+            <a-sphere position="0 0.5 0" radius="0.3" color="#ffaa00" material="metalness: 0.9; roughness: 0.1;" animation="property: rotation; to: 0 360 0; loop: true; dur: 4000"></a-sphere>
+        
+
+        
+    </a-scene>
+
+</body>
+</html>
