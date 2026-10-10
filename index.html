@@ -2,46 +2,85 @@
 <html lang="ar">
 <head>
     <meta charset="UTF-8">
-    <title>منظومة Geo-Vision AR - رابط المحاكاة</title>
-    <!-- استدعاء مكتبات الواقع المعزز ثلاثية الأبعاد مجاناً -->
+    <title>منظومة Geo-Vision AR - الحساس الحقيقي</title>
     <script src="https://aframe.io"></script>
     <script src="https://githack.com"></script>
     <style>
         body { margin: 0; overflow: hidden; font-family: Arial, sans-serif; }
         #telemetry-ui {
-            position: absolute; top: 10px; left: 10px; background: rgba(0,0,0,0.7);
+            position: absolute; top: 10px; left: 10px; background: rgba(0,0,0,0.8);
             color: #00ffcc; padding: 15px; border-radius: 8px; font-size: 14px; z-index: 999;
-            border: 1px solid #00ffcc; pointer-events: none; text-align: right; direction: rtl;
+            border: 1px solid #00ffcc; text-align: right; direction: rtl;
+        }
+        button {
+            background: #ffcc00; color: #000; border: none; padding: 10px;
+            font-weight: bold; border-radius: 5px; cursor: pointer; margin-top: 10px;
         }
     </style>
 </head>
 <body>
 
-    <!-- واجهة البيانات الرقمية الظاهرة فوق الكاميرا -->
     <div id="telemetry-ui">
-        <h3>Geo-Vision AR Telemetry</h3>
-        <p>حالة الحساس اللاسلكي: <span id="status" style="color:#00ff00;">متصل (ESP32 الافتراضي)</span></p>
-        <div id="target-data">
-            <p style="color:#ffcc00; font-weight:bold;">[تم رصد هدف تحت الأرض]</p>
-            <p>نوع المادة: ذهب صلب / عرق ثمين</p>
-            <p>العمق الحقيقي: <span id="depth">120</span> سم</p>
-            <p>نسبة التأكيد الفيزيائي: 91%</p>
+        <h3>Geo-Vision AR - التحكم</h3>
+        <p>حالة الحساس: <span id="status" style="color:red;">غير متصل</span></p>
+        <button id="connectBtn" onclick="connectToESP32()">🔌 ربط الحساس الحقيقي</button>
+        
+        <div id="target-data" style="display:none;">
+            <p style="color:#ffcc00; font-weight:bold;">[⚠️ تم رصد هدف حقيقي تحت الأرض]</p>
+            <p>العمق الحقيقي: <span id="depth">0</span> سم</p>
+            <p>نوع المادة: عرق ذهب صلب / تمعدن فائق</p>
         </div>
     </div>
 
-    <!-- كاميرا الواقع المعزز ونظام المسح ثلاثي الأبعاد -->
     <a-scene embedded arjs="sourceType: webcam; debugUIEnabled: false;">
         
-        <!-- سيظهر مجسم الذهب مباشرة عند توجيه الكاميرا والتعرف على السطح -->
-        
-            <!-- مجسم أسطواني يمثل عرق الذهب ممتد لأسفل -->
             <a-cylinder position="0 -1 0" radius="0.15" height="3" color="#ffcc00" material="opacity: 0.7; transparent: true; metalness: 0.9; roughness: 0.1;"></a-cylinder>
-            <!-- شذرة ذهب دائرية متوهجة تدور حول نفسها -->
             <a-sphere position="0 0.5 0" radius="0.3" color="#ffaa00" material="metalness: 0.9; roughness: 0.1;" animation="property: rotation; to: 0 360 0; loop: true; dur: 4000"></a-sphere>
         
-
         
     </a-scene>
 
+    <script>
+        const SERVICE_UUID = "4fafc201-1fb5-459e-8fcc-c5c9c331914b";
+        const CHARACTERISTIC_UUID = "beb5483e-36e1-4688-b7f5-ea07361b26a8";
+
+        async function connectToESP32() {
+            try {
+                document.getElementById('status').innerText = "جاري البحث...";
+                const device = await navigator.bluetooth.requestDevice({
+                    filters: [{ name: "Geo-Vision_Sensor_Node" }],
+                    optionalServices: [SERVICE_UUID]
+                });
+
+                const server = await device.gatt.connect();
+                const service = await server.getPrimaryService(SERVICE_UUID);
+                const characteristic = await service.getCharacteristic(CHARACTERISTIC_UUID);
+
+                document.getElementById('status').innerText = "متصل بنجاح الحساس حقيقي";
+                document.getElementById('status').style.color = "#00ff00";
+                document.getElementById('connectBtn').style.display = "none";
+
+                await characteristic.startNotifications();
+                characteristic.addEventListener('characteristicvaluechanged', handleData);
+
+            } catch (error) {
+                console.log(error);
+                document.getElementById('status').innerText = "فشل الاتصال";
+                document.getElementById('status').style.color = "red";
+            }
+        }
+
+        function handleData(event) {
+            let decoder = new TextDecoder('utf-8');
+            let dataString = decoder.decode(event.target.value);
+            
+            if (dataString.includes("GOLD_DETECTED")) {
+                let depthValue = dataString.split(":")[1].replace("CM","");
+                document.getElementById('target-data').style.display = "block";
+                document.getElementById('depth').innerText = depthValue;
+                document.getElementById('gold-vein').setAttribute('visible', 'true');
+            }
+        }
+    </script>
 </body>
 </html>
